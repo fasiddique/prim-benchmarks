@@ -14,6 +14,7 @@
 
 #include <omp.h>
 #include "../../support/timer.h"
+#include "./dram_ap.h"
 
 static int32_t *A;
 static int32_t *B;
@@ -39,6 +40,13 @@ void  *create_test_file(unsigned int nr_elements) {
 
 }
 
+static void print_res(int32_t* res, unsigned int nr_elements) {
+    for (int i = 0; i < nr_elements; i++) {
+        printf("%d\t", res[i]);
+    }
+    printf("\n");
+}
+
 /**
 * @brief compute output in the host
 */
@@ -48,6 +56,28 @@ static void vector_addition_host(unsigned int nr_elements, int t) {
     for (int i = 0; i < nr_elements; i++) {
         C[i] = A[i] + B[i];
     }
+    printf("+++++++++++++++++CPU+++++++++++++++++++++++\n");
+    print_res(C, nr_elements);
+}
+
+/**
+* @brief compute output in the dram AP
+*/
+static void vector_addition_pim(unsigned int nr_elements, int bit_len) {
+    mm_data_t curr;
+    dram_ap_valloc(&curr.matrix_A, 0, nr_elements, bit_len);
+    dram_ap_valloc(&curr.matrix_B, 0, nr_elements, bit_len);
+    dram_ap_valloc(&curr.matrix_out, 0, nr_elements, bit_len);
+    for (int i = 0; i < nr_elements; i+=bit_len) {
+        dram_ap_vcpy(curr.matrix_A, A, i, bit_len);
+        dram_ap_vcpy(curr.matrix_B, B, i, bit_len);
+        dram_ap_vadd(curr.matrix_out, curr.matrix_A, curr.matrix_B, i, bit_len);
+    }
+    printf("\n+++++++++++++++++DRAM AP+++++++++++++++++++++++\n");
+    print_res(curr.matrix_out, nr_elements);
+    free(curr.matrix_A);
+    free(curr.matrix_B);
+    free(curr.matrix_out);
 }
 
 // Params ---------------------------------------------------------------------
@@ -75,7 +105,7 @@ void usage() {
 
 struct Params input_params(int argc, char **argv) {
     struct Params p;
-    p.input_size    = 16777216;
+    p.input_size    = 32;//16777216;
     p.n_warmup      = 1;
     p.n_reps        = 3;
     p.n_threads     = 5;
@@ -118,6 +148,7 @@ int main(int argc, char **argv) {
     start(&timer, 0, 0);
 
     vector_addition_host(file_size, p.n_threads);
+    vector_addition_pim(file_size, 4);
 	
     stop(&timer, 0);
     printf("Kernel ");
