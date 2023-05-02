@@ -20,19 +20,16 @@
 #include <cstdio>
 #include <math.h>
 #include <sys/time.h>
-
+#include "./dram_ap.h"
 #include <vector>
-#include <thrust/device_vector.h>
-#include <thrust/host_vector.h>
-#include <thrust/scan.h>
-#include <thrust/copy.h>
-#include <thrust/system/omp/execution_policy.h>
-#include <thrust/system/omp/vector.h>
+// #include <thrust/device_vector.h>
+// #include <thrust/host_vector.h>
+// #include <thrust/scan.h>
+// #include <thrust/copy.h>
+// #include <thrust/system/omp/execution_policy.h>
+// #include <thrust/system/omp/vector.h>
 
 #include <omp.h>
-
-#include "../../support/common.h"
-#include "../../support/timer.h"
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -64,6 +61,20 @@ static T reduction_host(T* A, unsigned int nr_elements) {
     for (unsigned int i = 0; i < nr_elements; i++) {
         count += A[i];
     }
+    return count;
+}
+
+static T reduction_pim(T* A, unsigned int nr_elements, int bit_len) {
+    T count = 0;
+    mm_data_t curr;
+    dram_ap_valloc(&curr.matrix_A, 0, nr_elements, bit_len);
+    for (unsigned int i = 0; i < nr_elements; i+=bit_len*2) {
+        dram_ap_vcpy(curr.matrix_A, A, i, bit_len);
+        dram_ap_vredsum(&count, curr.matrix_A, i, bit_len);
+        dram_ap_vcpy(curr.matrix_A, A, i+bit_len, bit_len);
+        dram_ap_vredsum(&count, curr.matrix_A, i+bit_len, bit_len);
+    }
+    free(curr.matrix_A);
     return count;
 }
 
@@ -140,8 +151,8 @@ int main(int argc, char **argv) {
     A = (T*)malloc(input_size * sizeof(T));
     C = (T*)malloc(input_size * sizeof(T));
     C2 = (T*)malloc(input_size * sizeof(T));
-    T *bufferA = A;
-    T *bufferC = C2;
+    // T *bufferA = A;
+    // T *bufferC = C2;
 	
     T count = 0;
     T count_host = 0;
@@ -153,7 +164,7 @@ int main(int argc, char **argv) {
     Timer timer;
     float time_gpu = 0;
 
-    thrust::omp::vector<T> h_output(input_size);
+    // thrust::omp::vector<T> h_output(input_size);
 
     // Loop over main kernel
     for(int rep = 0; rep < p.n_warmup + p.n_reps; rep++) {
@@ -162,28 +173,30 @@ int main(int argc, char **argv) {
         if(rep >= p.n_warmup)
             start(&timer, 0, rep - p.n_warmup);
         count_host = reduction_host(A, input_size);
+        std::cout << "rep: " << rep << " count host: " << count_host << "\n";
         if(rep >= p.n_warmup)
             stop(&timer, 0);
 
-        thrust::omp::vector<T> d_input(input_size);
-        memcpy(thrust::raw_pointer_cast(&d_input[0]), A, input_size * sizeof(T));
+        // thrust::omp::vector<T> d_input(input_size);
+        // memcpy(thrust::raw_pointer_cast(&d_input[0]), A, input_size * sizeof(T));
 
-        omp_set_num_threads(p.n_threads);
+        // omp_set_num_threads(p.n_threads);
 
-        if(rep >= p.n_warmup)
-            start(&timer, 1, rep - p.n_warmup);
-        count = thrust::reduce(thrust::omp::par, d_input.begin(), d_input.end());
-        if(rep >= p.n_warmup)
-            stop(&timer, 1);
-        h_output = d_input;
+        // if(rep >= p.n_warmup)
+        //     start(&timer, 1, rep - p.n_warmup);
+        // count = thrust::reduce(thrust::omp::par, d_input.begin(), d_input.end());
+        // if(rep >= p.n_warmup)
+        //     stop(&timer, 1);
+        // h_output = d_input;
 
     }
+    count = reduction_pim(A, input_size, 8);
 
     // Print timing results
     printf("CPU ");
     print(&timer, 0, p.n_reps);
-    printf("Kernel ");
-    print(&timer, 1, p.n_reps);
+    // printf("Kernel ");
+    // print(&timer, 1, p.n_reps);
 
     // Check output
     bool status = true;
