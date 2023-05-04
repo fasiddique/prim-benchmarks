@@ -23,17 +23,16 @@
 
 #include <vector>
 
-#include <thrust/device_vector.h>
-#include <thrust/host_vector.h>
-#include <thrust/scan.h>
-#include <thrust/copy.h>
-#include <thrust/system/omp/execution_policy.h>
-#include <thrust/system/omp/vector.h>
+// #include <thrust/device_vector.h>
+// #include <thrust/host_vector.h>
+// #include <thrust/scan.h>
+// #include <thrust/copy.h>
+// #include <thrust/system/omp/execution_policy.h>
+// #include <thrust/system/omp/vector.h>
 
 #include <omp.h>
 
-#include "../../support/common.h"
-#include "../../support/timer.h"
+#include "dram_ap.h"
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -50,7 +49,7 @@ static T* C2;
 */
 static void read_input(T* A, unsigned int nr_elements) {
     //srand(0);
-    printf("nr_elements\t%u\t", nr_elements);
+    printf("nr_elements\t%u\n", nr_elements);
     for (unsigned int i = 0; i < nr_elements; i++) {
         //A[i] = (T) (rand()) % 2;
         A[i] = i;
@@ -65,6 +64,33 @@ static void scan_host(T* C, T* A, unsigned int nr_elements) {
     for (unsigned int i = 1; i < nr_elements; i++) {
         C[i] = C[i - 1] + A[i - 1];
     }
+}
+
+static void scan_pim(T* C, T* A, unsigned int nr_elements, int bit_len) {
+    mm_data_t curr;
+    dram_ap_valloc(&curr.matrix_A, 0, nr_elements, bit_len);
+    dram_ap_valloc(&curr.res, 0, nr_elements, bit_len);
+    curr.running_sum = 0;
+    dram_ap_cpy(&curr.res[0], 0);
+    for (int i = 1; i < nr_elements; i+=bit_len) {
+        dram_ap_vcpy(curr.matrix_A, A, i, bit_len);
+        dram_ap_vpresum(&curr.running_sum, curr.matrix_A, curr.res, i, bit_len);
+    }
+    printf("\n+++++++++++++++++DRAM AP+++++++++++++++++++++++\n");
+    bool status = true;
+    for (int i = 0; i < nr_elements; i++) {
+        if(C[i] != curr.res[i]){ 
+            status = false;
+            printf("%d: %lu -- %lu\n", i, C[i], curr.res[i]);
+        }
+    }
+    if (status) {
+        printf("[" ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET "] Outputs are equal\n");
+    } else {
+        printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] Outputs differ!\n");
+    }
+    free(curr.matrix_A);
+    free(curr.res);
 }
 
 // Params ---------------------------------------------------------------------
@@ -148,9 +174,9 @@ int main(int argc, char **argv) {
     Timer timer;
     float time_gpu = 0;
 
-    thrust::omp::vector<T> h_output(input_size);
+   // thrust::omp::vector<T> h_output(input_size);
 
-    // Loop over main kernel
+   // Loop over main kernel
     for(int rep = 0; rep < p.n_warmup + p.n_reps; rep++) {
 
         // Compute output on CPU (performance comparison and verification purposes)
@@ -160,16 +186,18 @@ int main(int argc, char **argv) {
         if(rep >= p.n_warmup)
             stop(&timer, 0);
 
-        memcpy(thrust::raw_pointer_cast(&h_output[0]), A, input_size * sizeof(T));
+        // memcpy(thrust::raw_pointer_cast(&h_output[0]), A, input_size * sizeof(T));
 
-        omp_set_num_threads(p.n_threads);
+        // omp_set_num_threads(p.n_threads);
 
-        if(rep >= p.n_warmup)
-            start(&timer, 1, rep - p.n_warmup);
-        thrust::exclusive_scan(thrust::omp::par, h_output.begin(),h_output.end(),h_output.begin());
-        if(rep >= p.n_warmup)
-            stop(&timer, 1);
+        // if(rep >= p.n_warmup)
+        //     start(&timer, 1, rep - p.n_warmup);
+        // thrust::exclusive_scan(thrust::omp::par, h_output.begin(),h_output.end(),h_output.begin());
+        // if(rep >= p.n_warmup)
+        //     stop(&timer, 1);
     }
+    scan_host(C, A, input_size);
+    scan_pim(C, A, input_size, 8);
 
     // Print timing results
     printf("CPU ");
@@ -178,18 +206,7 @@ int main(int argc, char **argv) {
     print(&timer, 1, p.n_reps);
 
     // Check output
-    bool status = true;
-    for (i = 0; i < input_size; i++) {
-        if(C[i] != h_output[i]){ 
-            status = false;
-            //printf("%d: %lu -- %lu\n", i, C[i], h_output[i]);
-        }
-    }
-    if (status) {
-        printf("[" ANSI_COLOR_GREEN "OK" ANSI_COLOR_RESET "] Outputs are equal\n");
-    } else {
-        printf("[" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "] Outputs differ!\n");
-    }
+   
 
     // Deallocation
     free(A);
