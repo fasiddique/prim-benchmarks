@@ -64,20 +64,18 @@ static void vector_addition_host(unsigned int nr_elements, int t) {
 * @brief compute output in the dram AP
 */
 static void vector_addition_pim(unsigned int nr_elements, int bit_len) {
-    mm_data_t curr;
-    dram_ap_valloc(&curr.matrix_A, 0, nr_elements, bit_len);
-    dram_ap_valloc(&curr.matrix_B, 0, nr_elements, bit_len);
-    dram_ap_valloc(&curr.matrix_out, 0, nr_elements, bit_len);
+    mm_data_t bitMatrix;
+    dram_ap_valloc(&bitMatrix.matrix_A, 0, nr_elements, bit_len);
+    dram_ap_valloc(&bitMatrix.matrix_B, 0, nr_elements, bit_len);
+    dram_ap_valloc(&bitMatrix.matrix_out, 0, nr_elements, bit_len);
     for (int i = 0; i < nr_elements; i+=bit_len) {
-        dram_ap_vcpy(curr.matrix_A, A, i, bit_len);
-        dram_ap_vcpy(curr.matrix_B, B, i, bit_len);
-        dram_ap_vadd(curr.matrix_out, curr.matrix_A, curr.matrix_B, i, bit_len);
+        dram_ap_vcpy(bitMatrix.matrix_A, A, i, bit_len);
+        dram_ap_vcpy(bitMatrix.matrix_B, B, i, bit_len);
+        dram_ap_vadd(bitMatrix.matrix_out, bitMatrix.matrix_A, bitMatrix.matrix_B, i, bit_len);
     }
-    printf("\n+++++++++++++++++DRAM AP+++++++++++++++++++++++\n");
-    print_res(curr.matrix_out, nr_elements);
-    free(curr.matrix_A);
-    free(curr.matrix_B);
-    free(curr.matrix_out);
+    free(bitMatrix.matrix_A);
+    free(bitMatrix.matrix_B);
+    free(bitMatrix.matrix_out);
 }
 
 // Params ---------------------------------------------------------------------
