@@ -6,4 +6,4 @@ Compilation instructions
 
 Execution instructions
 
-    ./va -r 16 
+    ./maxpool -r 16 
