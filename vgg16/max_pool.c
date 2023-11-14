@@ -55,26 +55,27 @@ void *create_test_file(unsigned int nr_elements)
 
 static void max_pool(unsigned int row, unsigned int col, unsigned int filter_length, int bit_len)
 {
-    int down_sample_col = col/filter_length;
-    int down_sample_size = down_sample_col*down_sample_col;
+    int down_sample_col = col / filter_length;
+    int down_sample_size = down_sample_col * down_sample_col;
     mm_data_t bitMatrix;
-    dram_ap_valloc(&bitMatrix.matrix_A, 0, down_sample_col, bit_len);
-    dram_ap_valloc(&bitMatrix.matrix_B, 1, down_sample_col, bit_len);
-    dram_ap_valloc(&bitMatrix.matrix_C, 2, down_sample_col, bit_len);
-    dram_ap_valloc(&bitMatrix.matrix_D, 3, down_sample_col, bit_len);
+    dram_ap_valloc(&bitMatrix.matrix_A, 0, down_sample_size, bit_len);
+    dram_ap_valloc(&bitMatrix.matrix_B, 1, down_sample_size, bit_len);
+    dram_ap_valloc(&bitMatrix.matrix_C, 2, down_sample_size, bit_len);
+    dram_ap_valloc(&bitMatrix.matrix_D, 3, down_sample_size, bit_len);
     dram_ap_valloc(&bitMatrix.matrix_out, 0, down_sample_size, bit_len);
     int cur_idx = 0;
-    for (int i = 0; i < row; i+=2)
+    for (int i = 0; i < row; i += 2)
     {
-        dram_ap_vcpy_split(bitMatrix.matrix_A, bitMatrix.matrix_B, feature_mat[i], col);
-        dram_ap_vcpy_split(bitMatrix.matrix_C, bitMatrix.matrix_D, feature_mat[i+1], col);
-        dram_ap_vmax(bitMatrix.matrix_A, bitMatrix.matrix_B, down_sample_col);
-        dram_ap_vmax(bitMatrix.matrix_A, bitMatrix.matrix_C, down_sample_col);
-        dram_ap_vmax(bitMatrix.matrix_A, bitMatrix.matrix_D, down_sample_col);
-        dram_ap_vcpy(bitMatrix.matrix_out, bitMatrix.matrix_A, cur_idx, down_sample_col);
-        cur_idx+=down_sample_col;
+        dram_ap_vcpy_split(bitMatrix.matrix_A, bitMatrix.matrix_B, feature_mat[i], col, cur_idx);
+        dram_ap_vcpy_split(bitMatrix.matrix_C, bitMatrix.matrix_D, feature_mat[i + 1], col, cur_idx);
+        cur_idx += down_sample_col;
     }
-    printf("\n\n\n\n\n+++++++++++++++++Res Max Pool+++++++++++++++++++++++\n");
+    cur_idx -= down_sample_col;
+    dram_ap_vmax(bitMatrix.matrix_A, bitMatrix.matrix_B, cur_idx);
+    dram_ap_vmax(bitMatrix.matrix_A, bitMatrix.matrix_C, cur_idx);
+    dram_ap_vmax(bitMatrix.matrix_A, bitMatrix.matrix_D, cur_idx);
+    dram_ap_vcpy(bitMatrix.matrix_out, bitMatrix.matrix_A, down_sample_size);
+    printf("\n\n+++++++++++++++++Res Max Pool+++++++++++++++++++++++\n");
     for (int i = 0; i < down_sample_size; i++)
     {
         printf("%d\t", bitMatrix.matrix_out[i]);
@@ -108,7 +109,7 @@ void usage()
             "\n    -e <E>    # of timed repetition iterations (default=3)"
             "\n"
             "\nBenchmark-specific options:"
-            "\n    -r <I>    square matrix's row size (default 224)"
+            "\n    -r <I>    square matrix size (default 224)"
             "\n");
 }
 
@@ -164,10 +165,9 @@ int main(int argc, char **argv)
 
     // Create an input file with arbitrary data.
     create_test_file(file_size);
-    printf("\n\n\n\n");
     max_pool(file_size, file_size, 2, 8);
     for (int i = 0; i < file_size; i++)
         free(feature_mat[i]);
-
+    free(feature_mat);
     return 0;
 }
