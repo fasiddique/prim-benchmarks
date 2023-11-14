@@ -1,0 +1,9 @@
+Max Pool
+
+Compilation instructions
+
+    make
+
+Execution instructions
+
+    ./va -r 16 
