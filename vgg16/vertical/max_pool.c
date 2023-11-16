@@ -13,7 +13,7 @@
 #include <stdint.h>
 
 #include <omp.h>
-#include "./support/timer.h"
+#include "../support/timer.h"
 #include "./dram_ap.h"
 
 uint32_t **feature_mat, **filter_mat;
@@ -96,10 +96,15 @@ static void max_pool(unsigned int row, unsigned int col, unsigned int filter_len
         cur_idx += down_sample_col;
     }
     dram_ap_vmax(bitMatrix.matrix_A, bitMatrix.matrix_B, down_sample_size);
-    dram_ap_vmax(bitMatrix.matrix_A, bitMatrix.matrix_C, down_sample_size);
-    dram_ap_vmax(bitMatrix.matrix_A, bitMatrix.matrix_D, down_sample_size);
-    dram_ap_vcpy(bitMatrix.matrix_out, bitMatrix.matrix_A, down_sample_size);
-    printf("\n\n+++++++++++++++++Res Max Pool+++++++++++++++++++++++\n");
+    dram_ap_vmax(bitMatrix.matrix_A, bitMatrix.matrix_C, down_sample_size);free(bitMatrix.matrix_A);
+    free(bitMatrix.matrix_B);
+    free(bitMatrix.matrix_C);
+    free(bitMatrix.matrix_D);
+    free(bitMatrix.matrix_E);
+    free(bitMatrix.matrix_F);
+    free(bitMatrix.matrix_G);
+    free(bitMatrix.matrix_H);
+    free(bitMatrix.matrix_I);
     for (int i = 0; i < down_sample_size; i++)
     {
         printf("%d\t", bitMatrix.matrix_out[i]);
@@ -205,7 +210,7 @@ static void xnor_convolution(unsigned int row, unsigned int col, unsigned int ke
     dram_ap_1bit_vxnor(bitMatrix.matrix_H, bitMatrix.matrix_H, filterMatrix.matrix_H, mat_len);
     dram_ap_1bit_vxnor(bitMatrix.matrix_I, bitMatrix.matrix_I, filterMatrix.matrix_I, mat_len);
 
-    dram_ap_9bit_popcount(bitMatrix.matrix_out, mat_len);
+    dram_ap_9bit_popcount(&bitMatrix, mat_len);
 
     uint32_t *mask_array;
     dram_ap_valloc(&mask_array, 0, mat_len, bit_len);
@@ -224,9 +229,15 @@ static void xnor_convolution(unsigned int row, unsigned int col, unsigned int ke
     free(bitMatrix.matrix_I);
     free(bitMatrix.matrix_out);
 
-    free(filterMatrix.matrix_A);
-    free(filterMatrix.matrix_B);
-    free(filterMatrix.matrix_C);
+    free(filterMatrix.matrix_A);free(bitMatrix.matrix_A);
+    free(bitMatrix.matrix_B);
+    free(bitMatrix.matrix_C);
+    free(bitMatrix.matrix_D);
+    free(bitMatrix.matrix_E);
+    free(bitMatrix.matrix_F);
+    free(bitMatrix.matrix_G);
+    free(bitMatrix.matrix_H);
+    free(bitMatrix.matrix_I);
     free(filterMatrix.matrix_D);
     free(filterMatrix.matrix_E);
     free(filterMatrix.matrix_F);
