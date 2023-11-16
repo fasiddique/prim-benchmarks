@@ -74,6 +74,16 @@ void createMatrix(unsigned int row, unsigned int col)
     // printf("\n\n");
 }
 
+static uint32_t** binarize(unsigned int row, unsigned int col, double **mat, int bit_len) {
+    mm_data_t bitMatrix;
+    dram_ap_valloc(&bitMatrix.matrix_double, 0, row*col, bit_len);
+    dram_ap_valloc(&bitMatrix.matrix_A, 0, row*col, bit_len);
+    for (int i = 0; i < row; i++) {
+        dram_ap_vcpy(bitMatrix.matrix_double, mat[i], col);
+    }
+    dram_ap_vbinarize(bitMatrix.matrix_A, bitMatrix.matrix_double, row*col);
+}
+
 /**
  * @brief compute output in the dram AP
  */

@@ -15,6 +15,7 @@ typedef struct
 	uint32_t *matrix_I;
 	uint32_t *matrix_out;
 	uint32_t matrix_len;
+	double *matrix_double;
 } mm_data_t;
 
 typedef struct
@@ -42,6 +43,14 @@ void dram_ap_vbrdcst(int32_t *dst_v, int32_t val, unsigned int len)
 	for (int i = 0; i < len; i++)
 	{
 		dst_v[i] = val;
+	}
+}
+
+void dram_ap_vbinarize(int32_t *dst_v, double *src_v, unsigned int len)
+{
+	for (int i = 0; i < len; i++)
+	{
+		dst_v[i] = src_v[i]>0?1:0;
 	}
 }
 
