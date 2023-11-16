@@ -229,15 +229,9 @@ static void xnor_convolution(unsigned int row, unsigned int col, unsigned int ke
     free(bitMatrix.matrix_I);
     free(bitMatrix.matrix_out);
 
-    free(filterMatrix.matrix_A);free(bitMatrix.matrix_A);
-    free(bitMatrix.matrix_B);
-    free(bitMatrix.matrix_C);
-    free(bitMatrix.matrix_D);
-    free(bitMatrix.matrix_E);
-    free(bitMatrix.matrix_F);
-    free(bitMatrix.matrix_G);
-    free(bitMatrix.matrix_H);
-    free(bitMatrix.matrix_I);
+    free(filterMatrix.matrix_A);
+    free(filterMatrix.matrix_B);
+    free(filterMatrix.matrix_C);
     free(filterMatrix.matrix_D);
     free(filterMatrix.matrix_E);
     free(filterMatrix.matrix_F);
