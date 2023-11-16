@@ -205,15 +205,7 @@ static void xnor_convolution(unsigned int row, unsigned int col, unsigned int ke
     dram_ap_1bit_vxnor(bitMatrix.matrix_H, bitMatrix.matrix_H, filterMatrix.matrix_H, mat_len);
     dram_ap_1bit_vxnor(bitMatrix.matrix_I, bitMatrix.matrix_I, filterMatrix.matrix_I, mat_len);
 
-    dram_ap_1bit_popcount(bitMatrix.matrix_out, bitMatrix.matrix_A, mat_len);
-    dram_ap_1bit_popcount(bitMatrix.matrix_out, bitMatrix.matrix_B, mat_len);
-    dram_ap_1bit_popcount(bitMatrix.matrix_out, bitMatrix.matrix_C, mat_len);
-    dram_ap_1bit_popcount(bitMatrix.matrix_out, bitMatrix.matrix_D, mat_len);
-    dram_ap_1bit_popcount(bitMatrix.matrix_out, bitMatrix.matrix_E, mat_len);
-    dram_ap_1bit_popcount(bitMatrix.matrix_out, bitMatrix.matrix_F, mat_len);
-    dram_ap_1bit_popcount(bitMatrix.matrix_out, bitMatrix.matrix_G, mat_len);
-    dram_ap_1bit_popcount(bitMatrix.matrix_out, bitMatrix.matrix_H, mat_len);
-    dram_ap_1bit_popcount(bitMatrix.matrix_out, bitMatrix.matrix_I, mat_len);
+    dram_ap_9bit_popcount(bitMatrix.matrix_out, mat_len);
 
     uint32_t *mask_array;
     dram_ap_valloc(&mask_array, 0, mat_len, bit_len);
@@ -231,6 +223,16 @@ static void xnor_convolution(unsigned int row, unsigned int col, unsigned int ke
     free(bitMatrix.matrix_H);
     free(bitMatrix.matrix_I);
     free(bitMatrix.matrix_out);
+
+    free(filterMatrix.matrix_A);
+    free(filterMatrix.matrix_B);
+    free(filterMatrix.matrix_C);
+    free(filterMatrix.matrix_D);
+    free(filterMatrix.matrix_E);
+    free(filterMatrix.matrix_F);
+    free(filterMatrix.matrix_G);
+    free(filterMatrix.matrix_H);
+    free(filterMatrix.matrix_I);
 
 }
 // Params ---------------------------------------------------------------------

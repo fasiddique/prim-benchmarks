@@ -46,14 +46,6 @@ void dram_ap_vbrdcst(int32_t *dst_v, int32_t val, unsigned int len)
 	}
 }
 
-void dram_ap_vbinarize(int32_t *dst_v, double *src_v, unsigned int len)
-{
-	for (int i = 0; i < len; i++)
-	{
-		dst_v[i] = src_v[i]>0?1:0;
-	}
-}
-
 void dram_ap_vcpy_split(uint32_t *dst_v1, uint32_t *dst_v2, uint32_t *src_v, unsigned int col, unsigned int curr_idx)
 {
 	for (int i = 0; i < col; i++)
@@ -135,9 +127,17 @@ void dram_ap_vgt(uint32_t *src1_v, uint32_t *src2_v, unsigned int col)
 	}
 }
 
-void dram_ap_1bit_popcount(uint32_t *dst_v, uint32_t *src_v, unsigned int col) {
+void dram_ap_9bit_popcount(mm_data_t *bitMatrix, unsigned int col) {
 	for (int i = 0; i < col; i++) {
-		if (src_v[i]) dst_v[i] += 1;
+		if (bitMatrix->matrix_A[i]) bitMatrix->matrix_out[i] += 1;
+		if (bitMatrix->matrix_B[i]) bitMatrix->matrix_out[i] += 1;
+		if (bitMatrix->matrix_C[i]) bitMatrix->matrix_out[i] += 1;
+		if (bitMatrix->matrix_D[i]) bitMatrix->matrix_out[i] += 1;
+		if (bitMatrix->matrix_E[i]) bitMatrix->matrix_out[i] += 1;
+		if (bitMatrix->matrix_F[i]) bitMatrix->matrix_out[i] += 1;
+		if (bitMatrix->matrix_G[i]) bitMatrix->matrix_out[i] += 1;
+		if (bitMatrix->matrix_H[i]) bitMatrix->matrix_out[i] += 1;
+		if (bitMatrix->matrix_I[i]) bitMatrix->matrix_out[i] += 1;
 	}
 }
 
