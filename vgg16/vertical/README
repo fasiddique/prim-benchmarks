@@ -1,9 +1,0 @@
-Max Pool
-
-Compilation instructions
-
-    make
-
-Execution instructions
-
-    ./maxpool -r 16 
