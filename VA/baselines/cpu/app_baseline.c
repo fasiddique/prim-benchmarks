@@ -56,8 +56,6 @@ static void vector_addition_host(unsigned int nr_elements, int t) {
     for (int i = 0; i < nr_elements; i++) {
         C[i] = A[i] + B[i];
     }
-    printf("+++++++++++++++++CPU+++++++++++++++++++++++\n");
-    print_res(C, nr_elements);
 }
 
 /**
